@@ -1,0 +1,56 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  medical-coding-api:
+    build: 
+      context: ./api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=medical_coding
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FHIR_SERVER_URL=http://hapi-fhir:8080/fhir
+    depends_on:
+      - postgres
+      - redis
+      - hapi-fhir
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: medical_coding
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  hapi-fhir:
+    image: hapiproject/hapi:latest
+    ports:
+      - "8081:8080"
+    environment:
+      - spring.datasource.url=jdbc:postgresql://postgres:5432/fhir
+      - spring.datasource.username=postgres
+      - spring.datasource.password=postgres
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
