@@ -1,0 +1,33 @@
+{
+  "name": "api-gateway",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "medical-coding",
+    "api-gateway",
+    "healthcare"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Medical Coding AI Agent API Gateway",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.1.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^6.11.2",
+    "helmet": "^7.2.0",
+    "openai": "^5.8.3",
+    "pg": "^8.16.3",
+    "redis": "^4.7.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
