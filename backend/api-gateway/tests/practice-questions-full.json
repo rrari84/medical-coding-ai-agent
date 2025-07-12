@@ -8,7 +8,7 @@
       "C": "41113",
       "D": "40804"
     },
-    "correct": "C",
+    "correctAnswer": "C",
     "category": "CPT",
     "explanation": "41113 pertains to excision of lesion of floor of mouth."
   },
@@ -21,7 +21,7 @@
       "C": "10060",
       "D": "10160"
     },
-    "correct": "C",
+    "correctAnswer": "C",
     "category": "CPT",
     "explanation": "10060 is the CPT code for incision and drainage of abscess."
   },
@@ -34,7 +34,7 @@
       "C": "20010",
       "D": "20020"
     },
-    "correct": "D",
+    "correctAnswer": "D",
     "category": "CPT",
     "explanation": "20020 is the CPT code for incision and removal of foreign body, subcutaneous tissues; simple."
   },
@@ -47,7 +47,7 @@
       "C": "83035",
       "D": "83034"
     },
-    "correct": "A",
+    "correctAnswer": "A",
     "category": "CPT",
     "explanation": "Code 83036 is for the Hemoglobin A1c test."
   },
@@ -60,7 +60,7 @@
       "C": "60220",
       "D": "60225"
     },
-    "correct": "C",
+    "correctAnswer": "C",
     "category": "CPT",
     "explanation": "60220 refers to a thyroid lobectomy."
   },
@@ -164,7 +164,7 @@
       "C": "I12.9",
       "D": "I13.10"
     },
-    "correct": "A",
+    "correctAnswer": "A",
     "category": "ICD10",
     "explanation": "I10 is the ICD-10-CM code for essential (primary) hypertension."
   },
@@ -190,7 +190,7 @@
       "C": "K0003",
       "D": "K0004"
     },
-    "correct": "A",
+    "correctAnswer": "A",
     "category": "HCPCS",
     "explanation": "The HCPCS Level II code K0001 represents a standard manual wheelchair."
   },
@@ -281,7 +281,7 @@
       "C": "A92.0",
       "D": "A92.8"
     },
-    "correct": "A",
+    "correctAnswer": "A",
     "category": "ICD10",
     "explanation": "A90 is the ICD-10-CM code for Dengue fever [classical dengue]."
   },
@@ -593,7 +593,7 @@
       "C": "M17.2",
       "D": "M17.3"
     },
-    "correct": "B",
+    "correctAnswer": "B",
     "category": "ICD10",
     "explanation": "M17.1 is the ICD-10-CM code for bilateral primary osteoarthritis of the knee."
   },
@@ -671,7 +671,7 @@
       "C": "Tibia",
       "D": "Fibula"
     },
-    "correct": "B",
+    "correctAnswer": "B",
     "category": "Anatomy",
     "explanation": "The femur, or thigh bone, is the longest and strongest bone in the human body."
   },
@@ -788,7 +788,7 @@
       "C": "E13.9",
       "D": "E08.9"
     },
-    "correct": "A",
+    "correctAnswer": "A",
     "category": "ICD10",
     "explanation": "E10.9 is the ICD-10-CM code for type 1 diabetes mellitus without complications."
   },
@@ -1061,7 +1061,7 @@
       "C": "High blood sugar level",
       "D": "Blood without sugar"
     },
-    "correct": "C",
+    "correctAnswer": "C",
     "category": "Terminology",
     "explanation": "Hyperglycemia refers to a high blood sugar level."
   },
@@ -1191,7 +1191,7 @@
       "C": "J1756",
       "D": "J1760"
     },
-    "correct": "A",
+    "correctAnswer": "A",
     "category": "HCPCS",
     "explanation": "The HCPCS Level II code for an infusion of Remicade (infliximab) is J1745."
   },
@@ -1295,7 +1295,7 @@
       "C": "J0587",
       "D": "J0588"
     },
-    "correct": "A",
+    "correctAnswer": "A",
     "category": "HCPCS",
     "explanation": "The correct HCPCS Level II code for a Botox injection is J0585."
   }

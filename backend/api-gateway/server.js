@@ -17,6 +17,19 @@ console.log('FHIR_SERVER_URL:', process.env.FHIR_SERVER_URL);
 // Basic middleware
 app.use(express.json({ limit: '10mb' }));
 
+// Add CORS support (add this after app.use(express.json()))
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 // Optional database connection - don't crash if it fails
 let pool = null;
 if (process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD) {

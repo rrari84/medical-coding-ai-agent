@@ -1,39 +1,45 @@
 -- db/init.sql
--- Medical Coding Database Schema
+-- Complete Medical Coding Database Schema with AI Test Tracking
 
--- CPT Codes table
+-- Original Medical Coding tables
 CREATE TABLE cpt_codes (
     id SERIAL PRIMARY KEY,
     code VARCHAR(10) NOT NULL UNIQUE,
     description TEXT NOT NULL,
     category VARCHAR(100),
     section VARCHAR(100),
+    usage_notes TEXT,
+    common_mistakes TEXT,
+    keywords TEXT[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ICD-10-CM Codes table
 CREATE TABLE icd10_codes (
     id SERIAL PRIMARY KEY,
     code VARCHAR(10) NOT NULL UNIQUE,
     description TEXT NOT NULL,
     category VARCHAR(100),
     chapter VARCHAR(100),
+    usage_notes TEXT,
+    common_mistakes TEXT,
+    keywords TEXT[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- HCPCS Codes table
 CREATE TABLE hcpcs_codes (
     id SERIAL PRIMARY KEY,
     code VARCHAR(10) NOT NULL UNIQUE,
     description TEXT NOT NULL,
     category VARCHAR(100),
+    usage_notes TEXT,
+    common_mistakes TEXT,
+    keywords TEXT[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Practice Questions table
 CREATE TABLE practice_questions (
     id SERIAL PRIMARY KEY,
     question_text TEXT NOT NULL,
@@ -43,12 +49,73 @@ CREATE TABLE practice_questions (
     option_d VARCHAR(10),
     correct_answer VARCHAR(10) NOT NULL,
     explanation TEXT,
-    question_type VARCHAR(50), -- 'CPT', 'ICD10', 'HCPCS', 'GENERAL'
-    difficulty_level VARCHAR(20), -- 'EASY', 'MEDIUM', 'HARD'
+    question_type VARCHAR(50),
+    difficulty_level VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Agent Performance Tracking
+-- AI Test Results Database Schema
+-- Test runs table - stores each test execution
+CREATE TABLE test_runs (
+    id SERIAL PRIMARY KEY,
+    test_name VARCHAR(255) NOT NULL,
+    agent_type VARCHAR(50) NOT NULL, -- 'pattern', 'gpt4o', 'custom', 'ensemble'
+    questions_tested INTEGER NOT NULL,
+    correct_answers INTEGER NOT NULL,
+    accuracy DECIMAL(5,2) NOT NULL,
+    avg_confidence DECIMAL(5,3),
+    avg_processing_time INTEGER, -- in milliseconds
+    total_processing_time INTEGER,
+    test_duration INTEGER, -- total test time in seconds
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB -- store additional test info
+);
+
+-- Individual question results table
+CREATE TABLE question_results (
+    id SERIAL PRIMARY KEY,
+    test_run_id INTEGER REFERENCES test_runs(id) ON DELETE CASCADE,
+    question_id INTEGER NOT NULL,
+    question_text TEXT,
+    question_category VARCHAR(50),
+    correct_answer CHAR(1),
+    ai_answer CHAR(1),
+    is_correct BOOLEAN NOT NULL,
+    confidence DECIMAL(5,3),
+    processing_time INTEGER,
+    reasoning TEXT,
+    source VARCHAR(50), -- 'pattern_matching', 'openai', 'custom_agent', etc.
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Agent performance summary table (for quick metrics)
+CREATE TABLE agent_performance (
+    id SERIAL PRIMARY KEY,
+    agent_type VARCHAR(50) NOT NULL UNIQUE,
+    total_tests INTEGER DEFAULT 0,
+    total_questions INTEGER DEFAULT 0,
+    total_correct INTEGER DEFAULT 0,
+    best_accuracy DECIMAL(5,2) DEFAULT 0,
+    avg_accuracy DECIMAL(5,2) DEFAULT 0,
+    avg_confidence DECIMAL(5,3) DEFAULT 0,
+    last_test_date TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Pattern matching optimization table
+CREATE TABLE pattern_optimization (
+    id SERIAL PRIMARY KEY,
+    pattern_name VARCHAR(100) NOT NULL,
+    keywords TEXT[],
+    correct_code VARCHAR(20),
+    success_rate DECIMAL(5,2) DEFAULT 0,
+    total_attempts INTEGER DEFAULT 0,
+    successful_matches INTEGER DEFAULT 0,
+    last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Agent responses for continuous learning
 CREATE TABLE agent_responses (
     id SERIAL PRIMARY KEY,
     question_id INTEGER REFERENCES practice_questions(id),
@@ -57,204 +124,131 @@ CREATE TABLE agent_responses (
     reasoning TEXT,
     processing_time_ms INTEGER,
     is_correct BOOLEAN,
+    agent_type VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- FHIR Terminology Mappings
-CREATE TABLE fhir_code_mappings (
-    id SERIAL PRIMARY KEY,
-    source_code VARCHAR(20),
-    source_system VARCHAR(100),
-    target_code VARCHAR(20),
-    target_system VARCHAR(100),
-    equivalence VARCHAR(20), -- 'equal', 'equivalent', 'wider', 'narrower'
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes for performance
-CREATE INDEX idx_cpt_code ON cpt_codes(code);
-CREATE INDEX idx_icd10_code ON icd10_codes(code);
-CREATE INDEX idx_hcpcs_code ON hcpcs_codes(code);
-CREATE INDEX idx_question_type ON practice_questions(question_type);
-CREATE INDEX idx_agent_responses_question ON agent_responses(question_id);
-CREATE INDEX idx_agent_responses_created ON agent_responses(created_at);
-
--- Enhanced CPT codes with relationships and context
-ALTER TABLE cpt_codes ADD COLUMN IF NOT EXISTS usage_notes TEXT;
-ALTER TABLE cpt_codes ADD COLUMN IF NOT EXISTS common_mistakes TEXT;
-ALTER TABLE cpt_codes ADD COLUMN IF NOT EXISTS keywords TEXT[];
-
--- Enhanced ICD-10 codes  
-ALTER TABLE icd10_codes ADD COLUMN IF NOT EXISTS usage_notes TEXT;
-ALTER TABLE icd10_codes ADD COLUMN IF NOT EXISTS common_mistakes TEXT;
-ALTER TABLE icd10_codes ADD COLUMN IF NOT EXISTS keywords TEXT[];
-
--- Enhanced HCPCS codes
-ALTER TABLE hcpcs_codes ADD COLUMN IF NOT EXISTS usage_notes TEXT;
-ALTER TABLE hcpcs_codes ADD COLUMN IF NOT EXISTS common_mistakes TEXT;
-ALTER TABLE hcpcs_codes ADD COLUMN IF NOT EXISTS keywords TEXT[];
 
 -- Code relationships table
-CREATE TABLE IF NOT EXISTS code_relationships (
+CREATE TABLE code_relationships (
     id SERIAL PRIMARY KEY,
     primary_code VARCHAR(20),
     related_code VARCHAR(20),
-    relationship_type VARCHAR(50), -- 'excludes', 'includes', 'similar', 'see_also'
+    relationship_type VARCHAR(50),
     explanation TEXT,
-    coding_system VARCHAR(10), -- 'CPT', 'ICD10', 'HCPCS'
+    coding_system VARCHAR(10),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Question patterns and common mistakes
-CREATE TABLE IF NOT EXISTS question_patterns (
+CREATE TABLE question_patterns (
     id SERIAL PRIMARY KEY,
     pattern_name VARCHAR(100),
     keywords TEXT[],
     correct_approach TEXT,
     common_mistakes TEXT,
     example_codes TEXT[],
+    success_rate DECIMAL(5,2) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Medical terminology lookup
-CREATE TABLE IF NOT EXISTS medical_terms (
+CREATE TABLE medical_terms (
     id SERIAL PRIMARY KEY,
     term VARCHAR(100),
     definition TEXT,
-    category VARCHAR(50), -- 'anatomy', 'procedure', 'condition', 'modifier'
+    category VARCHAR(50),
     related_codes TEXT[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert sample data
-INSERT INTO cpt_codes (code, description, category, section) VALUES
-('10021', 'Fine needle aspiration; without imaging guidance', 'Surgery', 'Integumentary System'),
-('10060', 'Incision and drainage of abscess (eg, carbuncle, suppurative hidradenitis, cutaneous or subcutaneous abscess, cyst, furuncle, or paronychia); simple or single', 'Surgery', 'Integumentary System'),
-('10080', 'Incision and drainage of pilonidal cyst; simple', 'Surgery', 'Integumentary System'),
-('10120', 'Incision and removal of foreign body, subcutaneous tissues; simple', 'Surgery', 'Integumentary System');
+-- Create indexes for better performance
+CREATE INDEX idx_cpt_code ON cpt_codes(code);
+CREATE INDEX idx_cpt_keywords ON cpt_codes USING GIN(keywords);
+CREATE INDEX idx_icd10_code ON icd10_codes(code);
+CREATE INDEX idx_icd10_keywords ON icd10_codes USING GIN(keywords);
+CREATE INDEX idx_hcpcs_code ON hcpcs_codes(code);
+CREATE INDEX idx_hcpcs_keywords ON hcpcs_codes USING GIN(keywords);
+CREATE INDEX idx_question_type ON practice_questions(question_type);
+CREATE INDEX idx_test_runs_agent_type ON test_runs(agent_type);
+CREATE INDEX idx_test_runs_created_at ON test_runs(created_at);
+CREATE INDEX idx_question_results_test_run_id ON question_results(test_run_id);
+CREATE INDEX idx_question_results_category ON question_results(question_category);
+CREATE INDEX idx_agent_performance_agent_type ON agent_performance(agent_type);
+CREATE INDEX idx_agent_responses_question ON agent_responses(question_id);
+CREATE INDEX idx_agent_responses_created ON agent_responses(created_at);
+CREATE INDEX idx_medical_terms_term ON medical_terms(term);
+CREATE INDEX idx_question_patterns_keywords ON question_patterns USING GIN(keywords);
 
-INSERT INTO icd10_codes (code, description, category, chapter) VALUES
-('I10', 'Essential (primary) hypertension', 'Circulatory', 'Diseases of the circulatory system'),
-('E10.9', 'Type 1 diabetes mellitus without complications', 'Endocrine', 'Endocrine, nutritional and metabolic diseases'),
-('A90', 'Dengue fever [classical dengue]', 'Infectious', 'Certain infectious and parasitic diseases');
+-- Insert initial agent performance records
+INSERT INTO agent_performance (agent_type) VALUES 
+('pattern'),
+('gpt4o'), 
+('custom'),
+('ensemble')
+ON CONFLICT (agent_type) DO NOTHING;
 
-INSERT INTO hcpcs_codes (code, description, category) VALUES
-('K0001', 'Standard wheelchair', 'Durable Medical Equipment'),
-('E0601', 'Continuous positive airway pressure (CPAP) device', 'Durable Medical Equipment'),
-('J1745', 'Injection, infliximab, 10 mg', 'Drugs Administered Other Than Oral Method');
+-- View for test comparison
+CREATE VIEW test_comparison AS
+SELECT 
+    tr.agent_type,
+    COUNT(*) as total_tests,
+    AVG(tr.accuracy) as avg_accuracy,
+    MAX(tr.accuracy) as best_accuracy,
+    AVG(tr.avg_confidence) as avg_confidence,
+    AVG(tr.questions_tested) as avg_questions_per_test,
+    MAX(tr.created_at) as last_test_date
+FROM test_runs tr
+GROUP BY tr.agent_type
+ORDER BY avg_accuracy DESC;
 
--- Insert enhanced CPT code data with context
+-- View for detailed question analysis
+CREATE VIEW question_analysis AS
+SELECT 
+    qr.question_category,
+    qr.correct_answer,
+    COUNT(*) as total_attempts,
+    COUNT(*) FILTER (WHERE qr.is_correct = true) as correct_attempts,
+    ROUND(COUNT(*) FILTER (WHERE qr.is_correct = true) * 100.0 / COUNT(*), 2) as success_rate,
+    AVG(qr.confidence) as avg_confidence
+FROM question_results qr
+GROUP BY qr.question_category, qr.correct_answer
+ORDER BY success_rate DESC;
+
+-- Sample CPT codes with enhanced data
 INSERT INTO cpt_codes (code, description, category, section, usage_notes, common_mistakes, keywords) VALUES
-('41113', 'Excision of lesion of floor of mouth', 'Surgery', 'Digestive System', 
- 'Specific to floor of mouth anatomy. Use when lesion is specifically on floor of mouth.', 
- 'Often confused with 40804 (vestibule) or 41108 (tongue). Location is key.',
- ARRAY['oral', 'lesion', 'excision', 'floor', 'mouth']),
+('10021', 'Fine needle aspiration; without imaging guidance', 'Surgery', 'Integumentary System', 'Simple aspiration procedure', 'Not for guided procedures', ARRAY['aspiration', 'needle', 'fine']),
+('10060', 'Incision and drainage of abscess; simple or single', 'Surgery', 'Integumentary System', 'For simple, single abscesses only', 'Confused with 10061 (complicated) or 10080 (pilonidal)', ARRAY['incision', 'drainage', 'abscess', 'simple', 'infected']),
+('10080', 'Incision and drainage of pilonidal cyst; simple', 'Surgery', 'Integumentary System', 'Specific to pilonidal cysts', 'Different from general abscess drainage', ARRAY['pilonidal', 'cyst', 'drainage']),
+('10120', 'Incision and removal of foreign body, subcutaneous tissues; simple', 'Surgery', 'Integumentary System', 'For simple foreign body removal', 'Not for deep or complicated cases', ARRAY['foreign', 'body', 'removal', 'simple']),
+('41113', 'Excision of lesion of floor of mouth', 'Surgery', 'Digestive System', 'Specific to floor of mouth anatomy', 'Often confused with 40804 (vestibule) or 41108 (tongue)', ARRAY['oral', 'lesion', 'excision', 'floor', 'mouth']),
+('20020', 'Arthrotomy, including exploration, drainage, or removal of foreign body; shoulder', 'Surgery', 'Musculoskeletal', 'Shoulder joint procedures', 'May be confused with soft tissue procedures', ARRAY['arthrotomy', 'shoulder', 'exploration', 'drainage']),
+('83036', 'Hemoglobin; glycosylated (A1C)', 'Laboratory', 'Chemistry', 'Standard diabetes monitoring test', 'Not confused with regular hemoglobin tests', ARRAY['hemoglobin', 'a1c', 'glycosylated', 'diabetes', 'glucose']),
+('60220', 'Total thyroid lobectomy, unilateral; with or without isthmusectomy', 'Surgery', 'Endocrine', 'For removal of one thyroid lobe', 'Often confused with 60210 (partial) or 60240 (total)', ARRAY['thyroid', 'lobectomy', 'unilateral', 'endocrine'])
+ON CONFLICT (code) DO UPDATE SET
+    usage_notes = EXCLUDED.usage_notes,
+    common_mistakes = EXCLUDED.common_mistakes,
+    keywords = EXCLUDED.keywords;
 
-('10060', 'Incision and drainage of abscess; simple or single', 'Surgery', 'Integumentary System',
- 'For simple, single abscesses. Does not include complicated procedures.',
- 'Confused with 10061 (complicated) or 10080 (pilonidal cyst). Complexity matters.',
- ARRAY['incision', 'drainage', 'abscess', 'simple', 'infected']),
-
-('20020', 'Arthrotomy, including exploration, drainage, or removal of foreign body; shoulder', 'Surgery', 'Musculoskeletal',
- 'Note: This code description seems incorrect in the practice test. Should verify.',
- 'May be confused with other soft tissue procedures.',
- ARRAY['arthrotomy', 'shoulder', 'exploration', 'drainage']),
-
-('83036', 'Hemoglobin; glycosylated (A1C)', 'Laboratory', 'Chemistry',
- 'Standard test for diabetes monitoring. Measures average glucose over 2-3 months.',
- 'Not confused with regular hemoglobin tests (83020-83033).',
- ARRAY['hemoglobin', 'a1c', 'glycosylated', 'diabetes', 'glucose']),
-
-('60220', 'Total thyroid lobectomy, unilateral; with or without isthmusectomy', 'Surgery', 'Endocrine',
- 'For removal of one thyroid lobe. Different from partial (60210) or total thyroidectomy (60240).',
- 'Often confused with 60210 (partial) or 60240 (total thyroidectomy).',
- ARRAY['thyroid', 'lobectomy', 'unilateral', 'endocrine']);
-
--- Insert enhanced ICD-10 codes
+-- Sample ICD-10 codes
 INSERT INTO icd10_codes (code, description, category, chapter, usage_notes, common_mistakes, keywords) VALUES
-('I10', 'Essential (primary) hypertension', 'Circulatory', 'Diseases of the circulatory system',
- 'Use for primary/essential hypertension without complications or specified cause.',
- 'Do not use if hypertension is secondary or has heart/kidney complications.',
- ARRAY['hypertension', 'essential', 'primary', 'blood', 'pressure']),
+('I10', 'Essential (primary) hypertension', 'Circulatory', 'Diseases of the circulatory system', 'Use for primary hypertension without complications', 'Do not use if secondary or with complications', ARRAY['hypertension', 'essential', 'primary', 'blood', 'pressure']),
+('E10.9', 'Type 1 diabetes mellitus without complications', 'Endocrine', 'Endocrine diseases', 'Type 1 diabetes without current complications', 'Not for type 2 or gestational diabetes', ARRAY['diabetes', 'type', '1', 'mellitus', 'insulin']),
+('A90', 'Dengue fever [classical dengue]', 'Infectious', 'Infectious and parasitic diseases', 'Classic dengue without hemorrhagic manifestations', 'Different from dengue hemorrhagic fever', ARRAY['dengue', 'fever', 'tropical', 'viral']),
+('M17.1', 'Bilateral primary osteoarthritis of knee', 'Musculoskeletal', 'Musculoskeletal diseases', 'Specifically for bilateral knee arthritis', 'Must specify bilateral vs unilateral', ARRAY['osteoarthritis', 'bilateral', 'knee', 'arthritis', 'joint'])
+ON CONFLICT (code) DO UPDATE SET
+    usage_notes = EXCLUDED.usage_notes,
+    common_mistakes = EXCLUDED.common_mistakes,
+    keywords = EXCLUDED.keywords;
 
-('E10.9', 'Type 1 diabetes mellitus without complications', 'Endocrine', 'Endocrine, nutritional and metabolic diseases',
- 'For type 1 diabetes without current complications. Use additional codes for complications.',
- 'Not for type 2 (E11.x) or gestational diabetes. Must specify type 1.',
- ARRAY['diabetes', 'type', '1', 'mellitus', 'insulin']),
-
-('A90', 'Dengue fever [classical dengue]', 'Infectious', 'Certain infectious and parasitic diseases',
- 'For classic dengue fever without hemorrhagic manifestations.',
- 'Different from dengue hemorrhagic fever (A91).',
- ARRAY['dengue', 'fever', 'tropical', 'viral']),
-
-('M17.1', 'Bilateral primary osteoarthritis of knee', 'Musculoskeletal', 'Diseases of the musculoskeletal system',
- 'Specifically for bilateral knee arthritis. Use M17.0 for unilateral.',
- 'Must specify bilateral vs unilateral (M17.0).',
- ARRAY['osteoarthritis', 'bilateral', 'knee', 'arthritis', 'joint']);
-
--- Insert enhanced HCPCS codes  
+-- Sample HCPCS codes
 INSERT INTO hcpcs_codes (code, description, category, usage_notes, common_mistakes, keywords) VALUES
-('K0001', 'Standard wheelchair', 'Durable Medical Equipment',
- 'Basic manual wheelchair. Most common wheelchair code.',
- 'Different from powered wheelchairs (K0813+) or specialized types.',
- ARRAY['wheelchair', 'manual', 'standard', 'mobility']),
-
-('E0601', 'Continuous positive airway pressure (CPAP) device', 'Durable Medical Equipment',
- 'For sleep apnea treatment. Standard CPAP machine.',
- 'Different from BiPAP (E0470) or other respiratory equipment.',
- ARRAY['cpap', 'sleep', 'apnea', 'respiratory', 'airway']),
-
-('J1745', 'Injection, infliximab, 10 mg', 'Drugs Administered Other Than Oral Method',
- 'Remicade injection. Dosed per 10mg units.',
- 'Dose-specific. Different from other TNF inhibitors.',
- ARRAY['infliximab', 'remicade', 'injection', 'tnf', 'biologic']);
-
--- Insert code relationships
-INSERT INTO code_relationships (primary_code, related_code, relationship_type, explanation, coding_system) VALUES
-('41113', '40804', 'similar', 'Both oral lesion excisions, but 41113 is floor of mouth, 40804 is vestibule', 'CPT'),
-('41113', '41108', 'similar', 'Both oral excisions, but 41113 is floor of mouth, 41108 is tongue', 'CPT'),
-('10060', '10061', 'similar', '10060 is simple I&D, 10061 is complicated', 'CPT'),
-('10060', '10080', 'similar', '10060 is abscess I&D, 10080 is pilonidal cyst', 'CPT'),
-('I10', 'I11.9', 'related', 'I10 is essential HTN, I11.9 is hypertensive heart disease', 'ICD10'),
-('E10.9', 'E11.9', 'similar', 'E10.9 is type 1 diabetes, E11.9 is type 2', 'ICD10');
-
--- Insert question patterns
-INSERT INTO question_patterns (pattern_name, keywords, correct_approach, common_mistakes, example_codes) VALUES
-('oral_lesion_excision', ARRAY['oral', 'lesion', 'excision', 'mouth', 'floor'],
- 'Identify specific anatomical location: floor of mouth = 41113, vestibule = 40804, tongue = 41108',
- 'Confusing anatomical locations within oral cavity',
- ARRAY['41113', '40804', '41108']),
-
-('abscess_drainage', ARRAY['incision', 'drainage', 'abscess', 'infected', 'simple'],
- 'Determine complexity: simple = 10060, complicated = 10061. Consider anatomical location.',
- 'Not distinguishing between simple and complicated procedures',
- ARRAY['10060', '10061', '10080']),
-
-('hypertension_coding', ARRAY['hypertension', 'blood', 'pressure', 'essential'],
- 'Essential/primary HTN = I10. Secondary HTN uses I15.x. With complications use I11-I13.',
- 'Using I10 when hypertension has complications or is secondary',
- ARRAY['I10', 'I11.9', 'I15.0']),
-
-('diabetes_coding', ARRAY['diabetes', 'type', 'mellitus', 'insulin'],
- 'Must specify type: Type 1 = E10.x, Type 2 = E11.x. Add complications with additional digits.',
- 'Confusing type 1 and type 2, or not coding complications',
- ARRAY['E10.9', 'E11.9']);
-
--- Insert medical terminology
-INSERT INTO medical_terms (term, definition, category, related_codes) VALUES
-('bradycardia', 'Abnormally slow heart rate, typically under 60 beats per minute', 'condition', ARRAY['R00.1']),
-('hyperglycemia', 'Abnormally high blood glucose levels', 'condition', ARRAY['R73.9']),
-('hepatomegaly', 'Abnormal enlargement of the liver', 'condition', ARRAY['R16.0']),
-('lobectomy', 'Surgical removal of a lobe of an organ', 'procedure', ARRAY['60220', '32480']),
-('excision', 'Surgical removal or cutting out of tissue', 'procedure', ARRAY['11400-11646', '40800-41899']),
-('incision and drainage', 'Surgical procedure to cut open and drain fluid/pus', 'procedure', ARRAY['10060-10180']);
-
--- Create indexes for fast lookups
-CREATE INDEX IF NOT EXISTS idx_cpt_keywords ON cpt_codes USING GIN(keywords);
-CREATE INDEX IF NOT EXISTS idx_icd10_keywords ON icd10_codes USING GIN(keywords);
-CREATE INDEX IF NOT EXISTS idx_hcpcs_keywords ON hcpcs_codes USING GIN(keywords);
-CREATE INDEX IF NOT EXISTS idx_medical_terms_term ON medical_terms(term);
-CREATE INDEX IF NOT EXISTS idx_question_patterns_keywords ON question_patterns USING GIN(keywords);
+('K0001', 'Standard wheelchair', 'Durable Medical Equipment', 'Basic manual wheelchair', 'Different from powered wheelchairs', ARRAY['wheelchair', 'manual', 'standard', 'mobility']),
+('E0601', 'Continuous positive airway pressure (CPAP) device', 'Durable Medical Equipment', 'For sleep apnea treatment', 'Different from BiPAP or other respiratory equipment', ARRAY['cpap', 'sleep', 'apnea', 'respiratory', 'airway']),
+('J1745', 'Injection, infliximab, 10 mg', 'Drugs Administered Other Than Oral Method', 'Remicade injection, dosed per 10mg units', 'Dose-specific, different from other TNF inhibitors', ARRAY['infliximab', 'remicade', 'injection', 'tnf', 'biologic'])
+ON CONFLICT (code) DO UPDATE SET
+    usage_notes = EXCLUDED.usage_notes,
+    common_mistakes = EXCLUDED.common_mistakes,
+    keywords = EXCLUDED.keywords;
 
 -- Function to search codes by keywords
 CREATE OR REPLACE FUNCTION search_codes_by_keywords(search_keywords TEXT[])
@@ -289,3 +283,37 @@ BEGIN
     ORDER BY relevance_score DESC, coding_system, code;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function to update agent performance after each test
+CREATE OR REPLACE FUNCTION update_agent_performance()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Update agent performance summary
+    INSERT INTO agent_performance (agent_type, total_tests, total_questions, total_correct, best_accuracy, avg_accuracy, last_test_date)
+    VALUES (
+        NEW.agent_type,
+        1,
+        NEW.questions_tested,
+        NEW.correct_answers,
+        NEW.accuracy,
+        NEW.accuracy,
+        NEW.created_at
+    )
+    ON CONFLICT (agent_type) DO UPDATE SET
+        total_tests = agent_performance.total_tests + 1,
+        total_questions = agent_performance.total_questions + NEW.questions_tested,
+        total_correct = agent_performance.total_correct + NEW.correct_answers,
+        best_accuracy = GREATEST(agent_performance.best_accuracy, NEW.accuracy),
+        avg_accuracy = (agent_performance.total_correct + NEW.correct_answers) * 100.0 / (agent_performance.total_questions + NEW.questions_tested),
+        last_test_date = NEW.created_at,
+        updated_at = CURRENT_TIMESTAMP;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to auto-update agent performance
+CREATE TRIGGER update_agent_performance_trigger
+    AFTER INSERT ON test_runs
+    FOR EACH ROW
+    EXECUTE FUNCTION update_agent_performance();
