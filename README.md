@@ -37,7 +37,7 @@ Express API Gateway (Node.js)
 └── PostgreSQL DB (Test Results, Metrics)
 
 
-> For a full diagram: see `/docs/architecture.png` or Notion.
+> For a full diagram, see Notion.
 
 ---
 
