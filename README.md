@@ -2,8 +2,9 @@
 
 A modular, knowledge-grounded AI system for **automated medical code selection** (CPT, ICD-10-CM, HCPCS) from clinical text. Built for intelligent integration into EHR workflows, with explainability, pattern safety, and performance benchmarking.
 
-<img width="801" height="467" alt="image" src="https://github.com/user-attachments/assets/f6cdc97f-e12c-4af5-9776-36a301d898e1" />
-
+<img width="797" height="467" alt="snip1" src="https://github.com/user-attachments/assets/f7b04ca8-9aa3-45e1-bd3b-6813d891399f" />
+<img width="794" height="380" alt="snip2" src="https://github.com/user-attachments/assets/c847e33c-0b15-431c-bb0d-5021c323c1f6" />
+<img width="772" height="209" alt="image" src="https://github.com/user-attachments/assets/c564d273-d80e-4822-89a1-1e5aef1a9445" />
 
 ---
 
