@@ -206,11 +206,26 @@ class DatabaseService {
         return result.rows;
     }
 
-    //This removes one test run from test_runs -> might plan to expand this to also remove question results
+    //This removes one test run from test_runs and all associated question results
     async deleteTestRun(testRunId) {
-        const query = 'DELETE FROM test_runs WHERE id = $1';
-        await this.pool.query(query, [testRunId]);
-    }
+        const client = await this.pool.connect();
+            try {
+                await client.query('BEGIN');
+        
+                //Delete question results first (foreign key constraint)
+                await client.query('DELETE FROM question_results WHERE test_run_id = $1', [testRunId]);
+        
+                //Then delete the test run
+                await client.query('DELETE FROM test_runs WHERE id = $1', [testRunId]);
+        
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
+            }
+        }
 
     //This aggregates daily performance stats across test runs
     async getDetailedComparison(days = 30) {
