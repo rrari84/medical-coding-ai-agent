@@ -14,7 +14,12 @@ services:
       - DB_NAME=medical_coding
       - DB_USER=postgres
       - DB_PASSWORD=postgres
+<<<<<<< HEAD
       - OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # Replace with your actual OpenAI API key
+=======
+      - OPENAI_API_KEY=${OPENAI_API_KEY} # Ensure this is set in your environment
+      - FHIR_SERVER_URL=http://hapi-fhir:8080/fhir
+>>>>>>> 4417c00 (Updated Codebase)
     depends_on:
       - postgres
     volumes:
@@ -33,5 +38,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4417c00 (Updated Codebase)
 volumes:
   postgres_data:
